@@ -6,6 +6,14 @@ Both implementations train a 1-layer transformer on character-level name generat
 
 ## Quick start
 
+If you don't have Rust installed, you can install it with [rustup](https://rustup.rs/):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Then run:
+
 ```bash
 cargo run --release
 ```

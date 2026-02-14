@@ -1,5 +1,4 @@
 /target
-microgpt_rs
 __pycache__/
 *.pyc
 .DS_Store

@@ -1,3 +1,4 @@
+*_go
 /target
 __pycache__/
 *.pyc

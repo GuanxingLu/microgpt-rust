@@ -77,9 +77,9 @@ func (r *Rng) Shuffle(slice []string) {
 type ValIdx = int
 
 type Node struct {
-	data       float64  // scalar value of this node calculated during forward pass
-	grad       float64  // derivative of the loss w.r.t. this node, calculated in backward pass
-	children   []ValIdx // children of this node in the computation graph
+	data       float64   // scalar value of this node calculated during forward pass
+	grad       float64   // derivative of the loss w.r.t. this node, calculated in backward pass
+	children   []ValIdx  // children of this node in the computation graph
 	localGrads []float64 // local derivative of this node w.r.t. its children
 }
 
@@ -353,9 +353,9 @@ func gpt(
 	headDim int,
 	nEmbd int,
 ) []ValIdx {
-	tokEmb := sd.Get("wte")[tokenID]  // token embedding
-	posEmb := sd.Get("wpe")[posID]    // position embedding
-	x := make([]ValIdx, nEmbd)        // joint token and position embedding
+	tokEmb := sd.Get("wte")[tokenID] // token embedding
+	posEmb := sd.Get("wpe")[posID]   // position embedding
+	x := make([]ValIdx, nEmbd)       // joint token and position embedding
 	for i := 0; i < nEmbd; i++ {
 		x[i] = tape.Add(tokEmb[i], posEmb[i])
 	}
@@ -486,7 +486,7 @@ func main() {
 		uchars = append(uchars, ch)
 	}
 	sort.Slice(uchars, func(i, j int) bool { return uchars[i] < uchars[j] })
-	bos := len(uchars)          // token id for the special Beginning of Sequence (BOS) token
+	bos := len(uchars)           // token id for the special Beginning of Sequence (BOS) token
 	vocabSize := len(uchars) + 1 // total number of unique tokens, +1 is for BOS
 	fmt.Printf("vocab size: %d\n", vocabSize)
 
@@ -500,10 +500,10 @@ func main() {
 	}
 
 	// Initialize the parameters, to store the knowledge of the model.
-	nEmbd := 16    // embedding dimension
-	nHead := 4     // number of attention heads
-	nLayer := 1    // number of layers
-	blockSize := 16 // maximum sequence length
+	nEmbd := 16              // embedding dimension
+	nHead := 4               // number of attention heads
+	nLayer := 1              // number of layers
+	blockSize := 16          // maximum sequence length
 	headDim := nEmbd / nHead // dimension of each head
 
 	// Persistent tape just for parameters

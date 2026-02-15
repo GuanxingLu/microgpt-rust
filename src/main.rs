@@ -5,8 +5,7 @@
 ///
 /// Ported from microgpt.py by @karpathy
 ///
-
-use std::fs;       // fs::read_to_string
+use std::fs; // fs::read_to_string
 use std::path::Path; // Path::new
 use std::process::Command; // for downloading input.txt
 
@@ -67,10 +66,10 @@ impl Rng {
 type ValIdx = usize;
 
 struct Node {
-    data: f64,          // scalar value of this node calculated during forward pass
-    grad: f64,          // derivative of the loss w.r.t. this node, calculated in backward pass
-    children: Vec<ValIdx>,    // children of this node in the computation graph
-    local_grads: Vec<f64>,    // local derivative of this node w.r.t. its children
+    data: f64,             // scalar value of this node calculated during forward pass
+    grad: f64,             // derivative of the loss w.r.t. this node, calculated in backward pass
+    children: Vec<ValIdx>, // children of this node in the computation graph
+    local_grads: Vec<f64>, // local derivative of this node w.r.t. its children
 }
 
 struct Tape {
@@ -254,7 +253,10 @@ fn linear(tape: &mut Tape, x: &[ValIdx], w: &[Vec<ValIdx>]) -> Vec<ValIdx> {
 }
 
 fn softmax(tape: &mut Tape, logits: &[ValIdx]) -> Vec<ValIdx> {
-    let max_val = logits.iter().map(|&v| tape.data(v)).fold(f64::NEG_INFINITY, f64::max);
+    let max_val = logits
+        .iter()
+        .map(|&v| tape.data(v))
+        .fold(f64::NEG_INFINITY, f64::max);
     let mut exps = Vec::with_capacity(logits.len());
     for &v in logits {
         let shifted = tape.add_const(v, -max_val);
@@ -297,7 +299,9 @@ struct StateDict {
 
 impl StateDict {
     fn new() -> Self {
-        StateDict { entries: Vec::new() }
+        StateDict {
+            entries: Vec::new(),
+        }
     }
 
     fn insert(&mut self, key: &str, val: Vec<Vec<ValIdx>>) {
@@ -352,10 +356,12 @@ fn gpt(
         let mut x_attn = Vec::with_capacity(n_embd);
         for h in 0..n_head {
             let hs = h * head_dim;
-            let q_h: Vec<ValIdx> = (hs..hs + head_dim).map(|j| {
-                // q is the last computed q
-                q[j]
-            }).collect();
+            let q_h: Vec<ValIdx> = (hs..hs + head_dim)
+                .map(|j| {
+                    // q is the last computed q
+                    q[j]
+                })
+                .collect();
 
             let n_ctx = keys[li].len();
             let k_h: Vec<Vec<ValIdx>> = (0..n_ctx)
@@ -392,7 +398,11 @@ fn gpt(
         }
 
         x = linear(tape, &x_attn, sd.get(&wo_key));
-        x = x.iter().zip(x_residual.iter()).map(|(&a, &b)| tape.add(a, b)).collect();
+        x = x
+            .iter()
+            .zip(x_residual.iter())
+            .map(|(&a, &b)| tape.add(a, b))
+            .collect();
 
         // 2) MLP block
         let x_residual = x.clone();
@@ -402,7 +412,11 @@ fn gpt(
         x = linear(tape, &x, sd.get(&fc1_key));
         x = x.iter().map(|&xi| tape.relu(xi)).collect();
         x = linear(tape, &x, sd.get(&fc2_key));
-        x = x.iter().zip(x_residual.iter()).map(|(&a, &b)| tape.add(a, b)).collect();
+        x = x
+            .iter()
+            .zip(x_residual.iter())
+            .map(|(&a, &b)| tape.add(a, b))
+            .collect();
     }
 
     linear(tape, &x, sd.get("lm_head"))
@@ -430,7 +444,8 @@ fn main() {
     println!("num docs: {}", docs.len());
 
     // Let there be a Tokenizer to translate strings to discrete symbols and back
-    let mut uchars: Vec<char> = { // unique characters in the dataset become token ids 0..n-1
+    let mut uchars: Vec<char> = {
+        // unique characters in the dataset become token ids 0..n-1
         let mut set = std::collections::BTreeSet::new();
         for doc in &docs {
             for ch in doc.chars() {
@@ -449,9 +464,9 @@ fn main() {
     }
 
     // Initialize the parameters, to store the knowledge of the model.
-    let n_embd: usize = 16;     // embedding dimension
-    let n_head: usize = 4;      // number of attention heads
-    let n_layer: usize = 1;     // number of layers
+    let n_embd: usize = 16; // embedding dimension
+    let n_head: usize = 4; // number of attention heads
+    let n_layer: usize = 1; // number of layers
     let block_size: usize = 16; // maximum sequence length
     let head_dim = n_embd / n_head; // dimension of each head
 
@@ -459,15 +474,29 @@ fn main() {
     let mut param_tape = Tape::new();
     let mut sd = StateDict::new();
 
-    let matrix = |tape: &mut Tape, rng: &mut Rng, nout: usize, nin: usize, std: f64| -> Vec<Vec<ValIdx>> {
-        (0..nout)
-            .map(|_| (0..nin).map(|_| tape.new_val(rng.gauss(0.0, std))).collect())
-            .collect()
-    };
+    let matrix =
+        |tape: &mut Tape, rng: &mut Rng, nout: usize, nin: usize, std: f64| -> Vec<Vec<ValIdx>> {
+            (0..nout)
+                .map(|_| {
+                    (0..nin)
+                        .map(|_| tape.new_val(rng.gauss(0.0, std)))
+                        .collect()
+                })
+                .collect()
+        };
 
-    sd.insert("wte", matrix(&mut param_tape, &mut rng, vocab_size, n_embd, 0.08));
-    sd.insert("wpe", matrix(&mut param_tape, &mut rng, block_size, n_embd, 0.08));
-    sd.insert("lm_head", matrix(&mut param_tape, &mut rng, vocab_size, n_embd, 0.08));
+    sd.insert(
+        "wte",
+        matrix(&mut param_tape, &mut rng, vocab_size, n_embd, 0.08),
+    );
+    sd.insert(
+        "wpe",
+        matrix(&mut param_tape, &mut rng, block_size, n_embd, 0.08),
+    );
+    sd.insert(
+        "lm_head",
+        matrix(&mut param_tape, &mut rng, vocab_size, n_embd, 0.08),
+    );
 
     for i in 0..n_layer {
         let k = format!("layer{}.attn_wq", i);
@@ -583,7 +612,11 @@ fn main() {
 
         // Adam optimizer update: update the model parameters based on the corresponding gradients.
         let lr_t = learning_rate * (1.0 - step as f64 / num_steps as f64); // linear learning rate decay
-        for (i, (&step_pidx, &orig_pidx)) in step_param_indices.iter().zip(param_indices.iter()).enumerate() {
+        for (i, (&step_pidx, &orig_pidx)) in step_param_indices
+            .iter()
+            .zip(param_indices.iter())
+            .enumerate()
+        {
             let g = tape.grad(step_pidx);
             m_buf[i] = beta1 * m_buf[i] + (1.0 - beta1) * g;
             v_buf[i] = beta2 * v_buf[i] + (1.0 - beta2) * g * g;
